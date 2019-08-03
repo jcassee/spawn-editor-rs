@@ -1,17 +1,5 @@
-extern crate default_editor;
-extern crate failure;
-
 use std::convert::AsRef;
 use std::process::{Command, ExitStatus};
-
-/// This function either uses the specified argument as an editor or
-/// tries to get this information from the environment variables.
-fn get_editor<'a>(x: Option<&'a str>) -> Result<std::borrow::Cow<'a, str>, std::env::VarError> {
-    if let Some(y) = x {
-        return Ok(y.into());
-    }
-    default_editor::get().map(|y| y.into())
-}
 
 /// This function either uses the `override_editor` argument as an editor
 /// or tries to get this information from the environment variables.
@@ -25,26 +13,27 @@ pub fn spawn_editor(
     override_editor: Option<&str>,
     extra_args: &[&str],
 ) -> Result<ExitStatus, failure::Error> {
-    let editor = get_editor(override_editor)?;
+    let editor: std::borrow::Cow<str> = match override_editor {
+        Some(z) => z.into(),
+        None => default_editor::get()?.into(),
+    };
 
     let joined_args = {
         let mut all_args = vec![&*editor];
         all_args.extend(extra_args.iter());
-        all_args
-    }
-    .join(" ");
-
-    let mut child = if cfg!(target_os = "windows") {
-        Command::new("cmd")
-            .args(&["/C", &joined_args[..]])
-            .spawn()?
-    } else {
-        Command::new("sh").args(&["-c", &joined_args[..]]).spawn()?
+        all_args.join(" ")
     };
 
-    let status = child.wait()?;
+    let (sh_x, sh_c) = if cfg!(target_os = "windows") {
+        ("cmd", "/C")
+    } else {
+        ("sh", "-c")
+    };
 
-    Ok(status)
+    Ok(Command::new(sh_x)
+        .args(&[sh_c, &joined_args[..]])
+        .spawn()?
+        .wait()?)
 }
 
 /// This function is a convenient wrapper around [`spawn_editor`],
@@ -58,10 +47,7 @@ where
     Tb: AsRef<str>,
 {
     let xar: Vec<_> = extra_args.iter().map(|x| x.as_ref()).collect();
-    let real_oore = match &override_editor {
-        Some(x) => Some(x.as_ref()),
-        None => None,
-    };
+    let real_oore = override_editor.as_ref().map(|x| x.as_ref());
     spawn_editor(real_oore, &xar[..])
 }
 
@@ -77,7 +63,7 @@ pub fn spawn_editor_with_args<Tb>(extra_args: &[Tb]) -> Result<ExitStatus, failu
 where
     Tb: AsRef<str>,
 {
-    spawn_editor_generic(Option::<&str>::None, extra_args)
+    spawn_editor_generic::<&str, Tb>(None, extra_args)
 }
 
 /*
