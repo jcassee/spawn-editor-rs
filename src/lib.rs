@@ -21,7 +21,8 @@ pub fn spawn_editor(
     };
 
     let joined_args = {
-        let mut all_args = vec![&*editor];
+        let mut all_args = Vec::with_capacity(1 + extra_args.len());
+        all_args.push(&*editor);
         all_args.extend(extra_args.iter());
         all_args.join(" ")
     };
@@ -48,8 +49,8 @@ where
     Ta: AsRef<str>,
     Tb: AsRef<str>,
 {
-    let xar: Vec<_> = extra_args.iter().map(|x| x.as_ref()).collect();
     let real_oore = override_editor.as_ref().map(|x| x.as_ref());
+    let xar: Vec<_> = extra_args.iter().map(|x| x.as_ref()).collect();
     spawn_editor(real_oore, &xar[..])
 }
 
