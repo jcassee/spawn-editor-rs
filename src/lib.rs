@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use std::convert::AsRef;
 use std::process::{Command, ExitStatus};
 
