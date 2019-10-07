@@ -1,6 +1,6 @@
 [package]
 name = "spawn-editor"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Erik Zscheile <erik.zscheile@gmail.com>"]
 description = "Contains utility functions to spawn a text editor"
 edition = "2018"
@@ -9,4 +9,4 @@ repository = "https://github.com/zserik/spawn-editor-rs"
 
 [dependencies]
 default-editor = "0.1.0"
-failure = "0.1.5"
+anyhow = "1.0.1"

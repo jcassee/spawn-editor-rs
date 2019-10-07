@@ -14,7 +14,7 @@ use std::process::{Command, ExitStatus};
 pub fn spawn_editor(
     override_editor: Option<&str>,
     extra_args: &[&str],
-) -> Result<ExitStatus, failure::Error> {
+) -> Result<ExitStatus, anyhow::Error> {
     let editor: std::borrow::Cow<str> = match override_editor {
         Some(z) => z.into(),
         None => default_editor::get()?.into(),
@@ -44,7 +44,7 @@ pub fn spawn_editor(
 pub fn spawn_editor_generic<Ta, Tb>(
     override_editor: Option<Ta>,
     extra_args: &[Tb],
-) -> Result<ExitStatus, failure::Error>
+) -> Result<ExitStatus, anyhow::Error>
 where
     Ta: AsRef<str>,
     Tb: AsRef<str>,
@@ -62,21 +62,20 @@ where
 /// spawn_editor::spawn_editor_with_args(&["src/lib.rs"]);
 /// ```
 #[inline]
-pub fn spawn_editor_with_args<Tb>(extra_args: &[Tb]) -> Result<ExitStatus, failure::Error>
+pub fn spawn_editor_with_args<Tb>(extra_args: &[Tb]) -> Result<ExitStatus, anyhow::Error>
 where
     Tb: AsRef<str>,
 {
     spawn_editor_generic::<&str, Tb>(None, extra_args)
 }
 
-/*
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
+    #[ignore]
     fn testit() {
         spawn_editor_with_args(&["src/lib.rs"]);
     }
 }
-*/
