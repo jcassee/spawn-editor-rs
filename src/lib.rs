@@ -2,6 +2,17 @@
 
 use std::convert::AsRef;
 use std::process::{Command, ExitStatus};
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum SEError {
+    #[error("editor spawning/waiting failed")]
+    Process(#[source] std::io::Error),
+    #[error("got invalid envirnment variable")]
+    Var(#[source] std::env::VarError),
+}
+
+type SEResult = Result<ExitStatus, SEError>;
 
 /// This function either uses the `override_editor` argument as an editor
 /// or tries to get this information from the environment variables.
@@ -11,13 +22,10 @@ use std::process::{Command, ExitStatus};
 /// ```no_run
 /// spawn_editor::spawn_editor(Some("nano"), &["src/lib.rs"]);
 /// ```
-pub fn spawn_editor(
-    override_editor: Option<&str>,
-    extra_args: &[&str],
-) -> Result<ExitStatus, anyhow::Error> {
+pub fn spawn_editor(override_editor: Option<&str>, extra_args: &[&str]) -> SEResult {
     let editor: std::borrow::Cow<str> = match override_editor {
         Some(z) => z.into(),
-        None => default_editor::get()?.into(),
+        None => default_editor::get().map_err(SEError::Var)?.into(),
     };
 
     let joined_args = {
@@ -35,16 +43,14 @@ pub fn spawn_editor(
 
     Ok(Command::new(sh_x)
         .args(&[sh_c, &joined_args[..]])
-        .spawn()?
-        .wait()?)
+        .spawn()
+        .and_then(|mut c| c.wait())
+        .map_err(SEError::Process)?)
 }
 
 /// This function is a convenient wrapper around [`spawn_editor`],
 /// in case that the arguments aren't simple string slices
-pub fn spawn_editor_generic<Ta, Tb>(
-    override_editor: Option<Ta>,
-    extra_args: &[Tb],
-) -> Result<ExitStatus, anyhow::Error>
+pub fn spawn_editor_generic<Ta, Tb>(override_editor: Option<Ta>, extra_args: &[Tb]) -> SEResult
 where
     Ta: AsRef<str>,
     Tb: AsRef<str>,
@@ -62,10 +68,7 @@ where
 /// spawn_editor::spawn_editor_with_args(&["src/lib.rs"]);
 /// ```
 #[inline]
-pub fn spawn_editor_with_args<Tb>(extra_args: &[Tb]) -> Result<ExitStatus, anyhow::Error>
-where
-    Tb: AsRef<str>,
-{
+pub fn spawn_editor_with_args<Tb: AsRef<str>>(extra_args: &[Tb]) -> SEResult {
     spawn_editor_generic::<&str, Tb>(None, extra_args)
 }
 
