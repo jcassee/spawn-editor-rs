@@ -8,7 +8,7 @@ use thiserror::Error;
 pub enum SEError {
     #[error("editor spawning/waiting failed")]
     Process(#[source] std::io::Error),
-    #[error("got invalid envirnment variable")]
+    #[error("got invalid environment variable")]
     Var(#[source] std::env::VarError),
 }
 
